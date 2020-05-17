@@ -1,6 +1,8 @@
-\documentclass[10pt,twocolumn]{article}
+% \documentclass[10pt,twocolumn]{article}
+\documentclass[sigplan, anonymous, authorversion]{acmart}
 \usepackage{times}
 \usepackage{graphicx}
+\usepackage{anyfontsize}
 
 % do not change these values
 \baselineskip 12pt
@@ -11,23 +13,60 @@
 \headheight 0in
 \headsep 0in
 
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+    
+\setcopyright{acmcopyright}
+\copyrightyear{2020}
+\acmYear{2020}
+\acmDOI{10.1145/1122445.1122456}
+
+%% These commands are for a PROCEEDINGS abstract or paper.
+\acmConference[Renton '20]{Renton '20: ACM Symposium on Cloud Computing}{October 19--21, 2020}{Renton, WA}
+\acmBooktitle{Renton '20: ACM Symposium on Cloud Computing,
+  October 19--21, 2020, Renton, WA}
+\acmPrice{15.00}
+\acmISBN{978-1-4503-XXXX-X/18/06}
+
+
+
 \begin{document}
 
 \title{Edge-Adaptable Serverless Acceleration for Machine Learning IoT Application}
-\author{
-% Michael Zhang, Chandra Krintz, Rich Wolski \\
-% \small {\em Dept. Computer Science} \\ 
-% \small {\em University of California, Santa Barbara }\\
-% \small {\em \{lebo, ckrintz, rich\}@cs.ucsb.edu }\\
-\small Submission Type: Research
+\author{Michael Zhang}
+\email{lebo@cs.ucsb.edu}
+\affiliation{
+  \institution{Dept. Computer Science}
+  \institution{University of California, Santa Barbara}
 }
-\date{}
-\maketitle
+\author{Chandra Krintz}
+\email{ckrintz@cs.ucsb.edu}
+\affiliation{
+  \institution{Dept. Computer Science}
+  \institution{University of California, Santa Barbara}
+}
+\author{Rich Wolski}
+\email{rich@cs.ucsb.edu}
+\affiliation{
+  \institution{Dept. Computer Science}
+  \institution{University of California, Santa Barbara}
+}
+
+% \small Submission Type: Research
+
+% \date{}
 
 \begin{abstract}
 \label{sec:abstract}
 \input{abstract}
 \end{abstract}
+
+
+\maketitle
+
+
 
 \section{Introdution}
 \label{sec:intro}

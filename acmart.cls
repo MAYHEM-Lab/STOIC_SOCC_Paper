@@ -108,9 +108,9 @@
   \if@ACM@nonacm
     \PackageInfo{\@classname}{Using nonacm mode}%
     \AtBeginDocument{\@ACM@printacmreffalse}%
-    % in 'nonacm' mode we disable the "ACM Reference Format"
-    % printing by default, but this can be re-enabled by the
-    % user using \settopmatter{printacmref=true}
+    in 'nonacm' mode we disable the "ACM Reference Format"
+    printing by default, but this can be re-enabled by the
+    user using \settopmatter{printacmref=true}
   \else
     \PackageInfo{\@classname}{Not using nonacm mode}%
   \fi}{\PackageError{\@classname}{The option nonacm can be either true or
@@ -1826,19 +1826,19 @@
       Manuscript submitted to ACM\\
     \else
       \if@ACM@authorversion
-          This is the author's version of the work. It is posted here for
-          your personal use. Not for redistribution. The definitive Version
-          of Record was published in
-          \if@ACM@journal@bibstrip
-            \emph{\@journalName}%
-          \else
-            \emph{\@acmBooktitle}%
-          \fi
-          \ifx\@acmDOI\@empty
-          .
-          \else
-            , \@formatdoi{\@acmDOI}.
-          \fi\\
+        %   This is the author's version of the work. It is posted here for
+        %   your personal use. Not for redistribution. The definitive Version
+        %   of Record was published in
+        %   \if@ACM@journal@bibstrip
+        %     \emph{\@journalName}%
+        %   \else
+        %     \emph{\@acmBooktitle}%
+        %   \fi
+        %   \ifx\@acmDOI\@empty
+        %   .
+        %   \else
+        %     , \@formatdoi{\@acmDOI}.
+        %   \fi\\
         \else
           \if@ACM@nonacm\else
             \if@ACM@journal@bibstrip
@@ -2343,16 +2343,22 @@
            description}\fi
     \medskip}%
   \fi}
+  
 \def\@mkabstract{\bgroup
   \ifx\@abstract\@lempty\else
   {\phantomsection\addcontentsline{toc}{section}{Abstract}%
     \if@ACM@journal
-       \everypar{\setbox\z@\lastbox\everypar{}}\small
+      \everypar{\setbox\z@\lastbox\everypar{}}\small
     \else
       \section*{\abstractname}%
+      \everypar{\setbox\z@\lastbox\everypar{}}\footnotesize
     \fi
-   \ignorespaces\@abstract\par}%
+  \ignorespaces\@abstract\par}%
   \fi\egroup}
+
+
+% mark  
+  
 \def\@mkbibcitation{\bgroup
   \let\@vspace\@vspace@orig
   \let\@vspacer\@vspacer@orig
@@ -2364,29 +2370,29 @@
       \string\titlenote{} or \string\authornote{} instead!}}%
   \def\@article@string{\ifx\@acmArticle\@empty{\ }\else,
     Article~\@acmArticle\ \fi}%
-  \par\medskip\small\noindent{\bfseries ACM Reference Format:}\par\nobreak
-  \noindent\bgroup
-    \def\\{\unskip{}, \ignorespaces}\authors\egroup. \@acmYear. \@title
-  \ifx\@subtitle\@empty. \else: \@subtitle. \fi
-  \if@ACM@nonacm\else
-    % The 'nonacm' option disables 'printacmref' by default,
-    % and the present \@mkbibcitation definition is never used
-    % in this case. The conditional remains useful if the user
-    % explicitly sets \settopmatter{printacmref=true}.
-    \if@ACM@journal@bibstrip
-       \textit{\@journalNameShort}
-       \@acmVolume, \@acmNumber \@article@string (\@acmPubDate),
-       \ref{TotPages}~\@pages@word.
-    \else
-       In \textit{\@acmBooktitle}%
-       \ifx\@acmEditors\@empty\textit{.}\else
-         \andify\@acmEditors\textit{, }\@acmEditors~\@editorsAbbrev.%
-       \fi\
-       ACM, New York, NY, USA%
-         \@article@string\unskip, \ref{TotPages}~\@pages@word.
-    \fi
-  \fi
-  \ifx\@acmDOI\@empty\else\@formatdoi{\@acmDOI}\fi
+  % \par\medskip\small\noindent{\bfseries ACM Reference Format:}\par\nobreak
+  % \noindent\bgroup
+    % \def\\{\unskip{}, \ignorespaces}\authors\egroup. \@acmYear. \@titlex
+  % \ifx\@subtitle\@empty. \else: \@subtitle. \fi
+%   \if@ACM@nonacm\else
+%     % The 'nonacm' option disables 'printacmref' by default,
+%     % and the present \@mkbibcitation definition is never used
+%     % in this case. The conditional remains useful if the user
+%     % explicitly sets \settopmatter{printacmref=true}.
+%     \if@ACM@journal@bibstrip
+%       \textit{\@journalNameShort}
+%       \@acmVolume, \@acmNumber \@article@string (\@acmPubDate),
+%       \ref{TotPages}~\@pages@word.
+%     \else
+%       In \textit{\@acmBooktitle}%
+%       \ifx\@acmEditors\@empty\textit{.}\else
+%          \andify\@acmEditors\textit{, }\@acmEditors~\@editorsAbbrev.%
+%       \fi\
+%       ACM, New York, NY, USA%
+%          \@article@string\unskip, \ref{TotPages}~\@pages@word.
+%     \fi
+%   \fi
+  % \ifx\@acmDOI\@empty\else\@formatdoi{\@acmDOI}\fi
 \par\egroup}
 \def\@printendtopmatter{%
   \let\@vspace\@vspace@orig
@@ -2544,16 +2550,16 @@
       \fi
     \fi
   \else % Proceedings
-    \fancyfoot[C]{\if@ACM@printfolios\footnotesize\thepage\fi}%
-    \fancyhead[LO]{\ACM@linecountL\@headfootfont\shorttitle}%
-    \fancyhead[RE]{\@headfootfont\@shortauthors\ACM@linecountR}%
+    % \fancyfoot[C]{\if@ACM@printfolios\footnotesize\thepage\fi}%
+    % \fancyhead[LO]{\ACM@linecountL\@headfootfont\shorttitle}%
+    % \fancyhead[RE]{\@headfootfont\@shortauthors\ACM@linecountR}%
     \if@ACM@nonacm\else%
-      \fancyhead[LE]{\ACM@linecountL\@headfootfont
-        \acmConference@shortname,
-        \acmConference@date, \acmConference@venue}%
-      \fancyhead[RO]{\@headfootfont
-        \acmConference@shortname,
-        \acmConference@date, \acmConference@venue\ACM@linecountR}%
+    %   \fancyhead[LE]{\ACM@linecountL\@headfootfont
+    %     \acmConference@shortname,
+    %     \acmConference@date, \acmConference@venue}%
+    %   \fancyhead[RO]{\@headfootfont
+    %     \acmConference@shortname,
+    %     \acmConference@date, \acmConference@venue\ACM@linecountR}%
     \fi
   \fi
   \if@ACM@sigchiamode
