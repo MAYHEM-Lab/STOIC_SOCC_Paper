@@ -4,7 +4,6 @@
     \caption{The STOIC Architecture \label{fig:STOIC}}
 \end{figure}
 
-
 To leverage hardware acceleration and distributed scheduling within a serverless architecture, we have developed STOIC, a framework for executing analytics applications in multi-tier IoT (sensing-edge-cloud) settings. STOIC streamlines the end-to-end process of packaging, transferring, scheduling, executing, and result retrieval for machine learning applications -- using multiple deployment targets (called runtimes). Figure~\ref{fig:STOIC} shows the distributed components of STOIC. The components comprise edge controller, edge cloud, and a public (or private) cloud.
 
 We have designed the system for image classification applications. In this paper, we investigate its use for processing images from multiple, motion-triggered camera traps (sensors) deployed to monitor wildlife across the Sedgwick Natural Reserve~\cite{ref:sedgwick}.
@@ -20,7 +19,7 @@ in our lab on campus, which is connected to both the reserve and the Internet. I
  
  \subsection{Public/Private Cloud}
 
-To investigate the use of the serverless architecture with hardware accelerators, we employ a shared, multi-university, GPU cloud, called  Nautilus~\cite{ref:nautilus}, as our remote cloud system. Nautilus is an Internet-connected, HyperCluster research platform developed by researchers at UC San Diego, the National Science Foundation, the Department of Energy, and multiple, participating universities globally.  Nautilus is designed for running data and computationally intensive applications and uses Kubernetes~\cite{ref:k8s} to manage and scale containerized applications. It also uses Rook~\cite{ref:rook} to integrate Ceph~\cite{ref:ceph} for data storage. As of March 2020, Nautilus consists of 176 computing nodes across the US and a total of 524 GPUs in the cluster. All nodes are connected via a multi-campus network. In this study, we consider Nautilus as a public cloud that enables us to leverage hardware acceleration (GPUs) in the serverless architecture to serve edge devices. 
+To investigate the use of the serverless architecture with hardware accelerators, we employ a shared, multiuniversity, GPU cloud, called  Nautilus~\cite{ref:nautilus}, as our remote cloud system. Nautilus is an Internet-connected, HyperCluster research platform developed by researchers at UC San Diego, the National Science Foundation, the Department of Energy, and multiple, participating universities globally.  Nautilus is designed for running data and computationally intensive applications and uses Kubernetes~\cite{ref:k8s} to manage and scale containerized applications. It also uses Rook~\cite{ref:rook} to integrate Ceph~\cite{ref:ceph} for data storage. As of March 2020, Nautilus consists of 176 computing nodes across the US and a total of 524 GPUs in the cluster. All nodes are connected via a multi-campus network. In this study, we consider Nautilus as a public cloud that enables us to leverage hardware acceleration (GPUs) in the serverless architecture to serve edge devices. 
 
 One major challenge we face with such deployments is hardware heterogeneity and performance variability. On Nautilus, we have observed 44 different types of CPU (e.g. Intel Xeon, AMD EPYC, among others) and 9 GPU types (e.g. Nvidia 1080Ti, K40, etc.). Both CPUs and GPUs of different types have different performance characteristics. Besides, ceph storage is run on dedicated nodes that distributed globally.
 
@@ -45,7 +44,7 @@ cloud and listens for requests from the edge controller (machine learning job re
  
 \begin{figure}
     \centering
-    \includegraphics[scale=0.21]{figures/deployment}
+    \includegraphics[scale=0.18]{figures/deployment}
     \caption{The Mean Absolute Error (MAE) of deployment time for the \textit{gpu1} runtime. The x-axis is window (history) size. The left subplot is MAE when STOIC uses average sliding window, the right subplot is MAE when STOIC uses median sliding window.
 \label{fig:deployment}}
 \end{figure}
@@ -71,7 +70,7 @@ As part of our investigations into this approach, we have found that this approa
  
  \begin{figure}
     \centering
-    \includegraphics[scale=0.14]{figures/timeline.png}
+    \includegraphics[scale=0.12]{figures/timeline.png}
     \caption{The comparison of predicted and actual total latency on 50 \textit{gpu1} benchmark executions with 150-image batch size. The x-axis is the epoch time and the y-axis is the total latency. \label{fig:timeline}}
 \end{figure}
 
@@ -88,7 +87,7 @@ To verify that STOIC's estimation of execution time captures the actual latency 
 
  \subsection{Implementation}
 
-Considering performance and interface, we implement STOIC using Golang~\cite{ref:golang}. Golang provides high-performance execution (vs scripting languages) and a user-friendly interface~\cite{ref:client-go} to Kubernetes and MySQL database. STOIC currently supports machine learning applications developed using the TensorFlow framework~\cite{ref:tensorflow} and can adapt to other machine learning libraries by extending the runtime environment.
+Considering performance and interface, we implement STOIC using Golang~\cite{ref:golang}. Golang provides high performance execution (vs scripting languages) and a user-friendly interface~\cite{ref:client-go} to Kubernetes and MySQL database. STOIC currently supports machine learning applications developed using the TensorFlow framework~\cite{ref:tensorflow} and can adapt to other machine learning libraries by extending the runtime environment.
  
 For our serverless architecture, STOIC integrates kubeless~\cite{ref:kubeless} and Docker~\cite{ref:docker} on the Nautilus Cloud. As a Kubernetes-native serverless framework, kubeless uses the Custom Resource Definition (CRD)~\cite{ref:crd} to dynamically create functions as Kubernetes custom resources and launches runtimes on-demand. For specific machine learning tasks that STOIC executes, we use Docker to build customized runtime images that we upload to Docker Hub~\cite{ref:dockerhub} in advance. When the function controller at Nautilus Cloud receives a task request, it pulls the latest image from Docker Hub before launching the function. This deployment pipeline makes the runtime flexible and extensible for evolving applications. 
  
@@ -102,7 +101,7 @@ To enable GPU access by serverless functions, we build a container with NVIDIA C
  \subsection{Workflow}
 
 \begin{figure}[t] \centering 
-\includegraphics[scale=0.35]{figures/selector_duplicator.png}
+\includegraphics[scale=0.33]{figures/selector_duplicator.png}
 \caption{The selector and duplicator modes of STOIC. 
 \label{fig:duplicator}}
 \end{figure}

@@ -2551,6 +2551,7 @@
     \fi
   \else % Proceedings
     % \fancyfoot[C]{\if@ACM@printfolios\footnotesize\thepage\fi}%
+    \fancyfoot[C]{\small\thepage}%
     % \fancyhead[LO]{\ACM@linecountL\@headfootfont\shorttitle}%
     % \fancyhead[RE]{\@headfootfont\@shortauthors\ACM@linecountR}%
     \if@ACM@nonacm\else%

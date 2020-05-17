@@ -3,6 +3,8 @@
 \usepackage{times}
 \usepackage{graphicx}
 \usepackage{anyfontsize}
+\usepackage{makecell}
+
 
 % do not change these values
 \baselineskip 12pt
@@ -31,6 +33,8 @@
 \acmISBN{978-1-4503-XXXX-X/18/06}
 
 
+\hyphenation{multi-university}
+
 
 \begin{document}
 
@@ -54,16 +58,17 @@
   \institution{University of California, Santa Barbara}
 }
 
-% \small Submission Type: Research
 
-% \date{}
+
+
 
 \begin{abstract}
 \label{sec:abstract}
 \input{abstract}
 \end{abstract}
 
-
+% \small Submission Type: Research
+% \date{}
 \maketitle
 
 
@@ -96,8 +101,9 @@ and the AWS Cloud Credits for Research program.
 
 
 
-\bibliographystyle{IEEETran}
-\bibliography{ref}
+% \bibliographystyle{ACM-Reference-Format}
+\bibliographystyle{IEEEtran}
+\bibliography{ref_acm}
 
 \end{document}
 
