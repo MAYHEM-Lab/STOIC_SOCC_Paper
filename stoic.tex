@@ -4,14 +4,13 @@
     \caption{The STOIC Architecture \label{fig:STOIC}}
 \end{figure}
 
-To leverage hardware acceleration and distributed scheduling within a serverless architecture, we have developed STOIC, a framework for executing analytics applications in multi-tier IoT (sensing-edge-cloud) settings. STOIC streamlines the end-to-end process of packaging, transferring, scheduling, executing, and result retrieval for machine learning applications -- using multiple deployment targets (called runtimes). Figure~\ref{fig:STOIC} shows the distributed components of STOIC. The components comprise edge controller, edge cloud, and a public (or private) cloud.
+To leverage hardware acceleration and distributed scheduling within a serverless architecture, we have developed STOIC, a framework for executing analytics applications in multi-tier IoT (sensing-edge-cloud) settings. STOIC streamlines the end-to-end process of packaging, transferring, scheduling, executing, and result retrieval for machine learning applications -- using multiple deployment targets (called runtimes). Figure~\ref{fig:STOIC} shows the distributed components of STOIC. Two main pillars comprise a edge controller and a public (or private) cloud.
 
 We have designed the system for image classification applications. In this paper, we investigate its use for processing images from multiple, motion-triggered camera traps (sensors) deployed to monitor wildlife across the Sedgwick Natural Reserve~\cite{ref:sedgwick}.
 
 \subsection{Edge Controller}
 The edge controller is a server that runs in an outbuilding at the reserve. It communicates wirelessly with the sensors and triggers analysis/computation upon their arrival. The edge controller is connected to the UCSB campus via a microwave link. When a camera trap detects motion, it takes photos and persists the images in flash storage. Periodically, the sensors transfer saved photos to the edge controller. STOIC runs on the edge controller and its execution is triggered by the arrival of image batches. When a batch arrives, STOIC transfers it to an edge cloud where the tasks are scheduled across +1 cloud components.
- 
- \subsection{Edge Cloud}
+
 As an intermediate computational tier between the sensors and the public cloud, the edge cloud can be placed anywhere, preferably near the edge devices, to lower the response latency for the data processing and analytics applications. It consists of four major components: (1) The \textbf{socket client} continuously listens for requests from the edge controller and receives image batches, (2) the \textbf{cloud scheduler} predicts the total latency based on historical data in a local database for each available runtime, (3) the \textbf{requester} dispatches the workload to the runtime having the least latency and triggers the  serverless function via a RESTful HTTP request either locally at the edge cloud or remotely in the public cloud, (4) the \textbf{inquisitor} deploys all runtimes constantly and records the deployment time respectively in the database. We use the inquisitor to establish the time series for predicting deployment latency.
 
 The edge cloud that we use in this study is deployed 
