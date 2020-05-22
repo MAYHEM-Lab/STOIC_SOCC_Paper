@@ -42,17 +42,22 @@ is triggered by the arrival of image batches.
 As an intermediate computational tier between the sensors and the public
 cloud, the edge controller can be placed anywhere, preferably near the edge
 devices, to lower the response latency for the data processing and analytics
-applications. It consists of three major components: (1) The \textbf{cloud
+applications. It consists of three major components: 
+\begin{itemize}
+\item The \textbf{cloud
 scheduler} predicts the total latency based on historical data in a local
-database for each available runtime, (2) the \textbf{requester} firstly
+database for each available runtime. 
+\item The \textbf{requester} firstly
 dispatches the image batch to a dedicated Ceph~\cite{ref:ceph} S3 bucket when
 the workload is scheduled at the public cloud, secondly deploys the runtime
-having the least latency and, lastly, triggers the  serverless function via a
+having the least latency and triggers the  serverless function via a
 RESTful HTTP request either locally at the edge cloud or remotely in the
-public cloud, (3) the \textbf{inquisitor} constantly deploys all runtimes as
+public cloud. 
+\item The \textbf{inquisitor} constantly deploys all runtimes as
 Kubernetes pods~\cite{ref:pods} and records the deployment time respectively
 in the database. We use the inquisitor to establish the time series for
 predicting deployment latency.
+\end{itemize}
 
 The edge cloud that we use in this study is deployed in our lab on campus,
 which is connected to both the reserve and the Internet. It consists of a
@@ -145,12 +150,12 @@ single-GPU and CPU runtimes. Note that, for \textit{edge} runtime, the
 deployment time zeroes out since STOIC executes the task locally in the edge
 cloud.
  
-\begin{figure}
+\begin{figure*}
     \centering
-    \includegraphics[scale=0.18]{figures/deployment}
+    \includegraphics[scale=0.3]{figures/deployment}
     \caption{The Mean Absolute Error (MAE) of deployment time for the \textit{gpu1} runtime. The x-axis is window (history) size. The left subplot is MAE when STOIC uses average sliding window, the right subplot is MAE when STOIC uses median sliding window.
 \label{fig:deployment}}
-\end{figure}
+\end{figure*}
 
  
 \begin{table}
@@ -243,11 +248,11 @@ implemented RANSAC approach.
  return $M$
 \end{algorithm}
  
- \begin{figure}
+ \begin{figure*}
     \centering
-    \includegraphics[scale=0.12]{figures/timeline.png}
+    \includegraphics[scale=0.20]{figures/timeline.png}
     \caption{The comparison of predicted and actual total latency on 50 \textit{gpu1} benchmark executions with 150-image batch size. The x-axis is the epoch time and the y-axis is the total latency. \label{fig:timeline}}
-\end{figure}
+\end{figure*}
 
 \begin{table}
 \centering
@@ -269,18 +274,34 @@ mean absolute error (PMAE), which we compute as the MAE divided by mean
 latency. The decrease in all three PMAE values in the second half of the
 execution trace also shows STOIC's adaptability.
 
-\begin{figure}[t] \centering 
-\includegraphics[scale=0.36]{figures/Hourly_act.png}
-\caption{Wildlife Hourly Activity Level. The figure demonstrates the mean activity level of wildlife throughout a day. Based on the curve, 1PM and 8PM are two peak hours of animal activities.
-\label{fig:hour_act}}
-\end{figure} 
+\begin{figure*}
+\centering
+\begin{minipage}{.50\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{figures/Hourly_act.png}
+  \captionof{figure}{Wildlife Hourly Activity Level. The figure demonstrates the mean activity level of wildlife throughout a day. Based on the curve, 1PM and 8PM are two peak hours of animal activities.}
+  \label{fig:hour_act}
+\end{minipage}%
+\begin{minipage}{.50\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{figures/ecdf.png}
+  \captionof{figure}{Conditional Empirical Cumulative Distribution Function. The STOIC image batch simulator is based on this function and random probabilities [0, 1) from a uniform distribution.}
+  \label{fig:cdft}
+\end{minipage}
+\end{figure*}
+
+%\begin{figure}[t] \centering 
+%\includegraphics[scale=0.36]{figures/Hourly_act.png}
+%\caption{Wildlife Hourly Activity Level. The figure demonstrates the mean activity level of wildlife throughout a day. Based on the curve, 1PM and 8PM are two peak hours of animal activities.
+%\label{fig:hour_act}}
+%\end{figure} 
  
  
-\begin{figure}[t] \centering 
-\includegraphics[scale=0.36]{figures/ecdf.png}
-\caption{Conditional Empirical Cumulative Distribution Function. The STOIC image batch simulator is based on this function and random probabilities [0, 1) from a uniform distribution.
-\label{fig:cecdf}}
-\end{figure} 
+%\begin{figure}[t] \centering 
+%\includegraphics[scale=0.36]{figures/ecdf.png}
+%\caption{Conditional Empirical Cumulative Distribution Function. The STOIC image batch simulator is based on this function and random probabilities [0, 1) from a uniform distribution.
+%\label{fig:cecdf}}
+%\end{figure} 
  
 \subsection{Simulator}
 
@@ -303,7 +324,7 @@ size and K is the cutoff value. This conditional ECDF effectively represents
 the trajectory of animal activity level and makes the evaluation empirical.
 Figure~\ref{ref:cecdf} plots the conditional ECDF. The x-axis is the image
 batch size ranging from zero to 2450, whereas the y-axis is the cumulative
-probability. During the execution of STOIC, the simulator first generates a
+probability. The sampling procedure is as follows.  During the execution of STOIC, the simulator first generates a
 random number in [0, 1) from a uniform distribution and secondly retrieves the
 corresponding image batch size from the conditional ECDF. Using this process,
 we are able to evaluate and draw conclusions by replaying the image stream

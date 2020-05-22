@@ -30,7 +30,7 @@ In total, there are five classes that we consider: Bird, Fox, Rodent, Human
 and Empty. Since class size is unbalanced due to the frequency of animal
 occurrences, we up-sample minority classes (e.g. fox) using the Keras
 ImageDataGenerator~\cite{ref:keras}. Doing so ensures that the classification
-model is not biased. We resize every image in the WTB dataset to $1920 \times
+model is not biased. We resize every image in the image dataset to $1920 \times
 1080$, and for each class, the dataset contains 251 images used to train the
 CNN model. Once model training is complete, the application stores this model
 in hdf5 format in cloud storage at both edge cloud (disk storage) and Nautilus
@@ -68,14 +68,14 @@ We do not explore the possibility of overlapping transfer time, deployment time,
 
 
 
-\begin{figure}[t] \centering 
-\includegraphics[scale=0.125]{figures/gpu1_latency.png}
+\begin{figure*}[t] \centering 
+\includegraphics[scale=0.2]{figures/gpu1_latency.png}
 \caption{The distribution of three components in total response time~($T_s$) of 150 executions on GPU1 runtime: Processing time ($T_p$), Deployment time ($T_d$) and Transfer time ($T_t$). The x-axis represents the time range, while the y-axis is the frequency of executions. The deployment time, which is depicted in the red histogram, is volatile and error-prone to prediction.
 \label{fig:breakdown}}
-\end{figure}
+\end{figure*}
 
 In the experiment, we model the batch size using simulator that leverages
-historical data derived from the WTB image corpus from 2013 to 2017 and the
+historical data derived from the overall image corpus from 2013 to 2017 and the
 arrival rate of images at the cameras. Figure~\ref{fig:breakdown} shows an
 example histograms for processing time, transfer time and deployment time on
 Nautilus for GPU1 runtime using 150 batches drawn from the simulator. On the
@@ -170,7 +170,7 @@ Further, we noticed that the Naultilus cpu was seldom a good choice in
 practice. The application must ``pay'' for the transfer and incur the
 deployment time variability to acquire a CPU that is almost equivalent to the
 edge node CPU.  Thus, in the ``real world'' version of the STOIC scheduler for
-WTB, we use the Duplicator with Nautilus GPUs only.
+the application, we use the Duplicator with Nautilus GPUs only.
 
 The scheduling algorithm starts the task on the edge cloud node and also
 begins the transfer to Nautilus. It then waits for the Nautilus deployment
@@ -207,14 +207,14 @@ performance of the Duplicator using the edge and one GPU and, separately, the
 edge and two GPUs from Nautilus. We duplicate the results for the Selector
 from Table~\ref{tab:selector} for comparison purposes.
 
-\begin{table}[t] 
+\begin{table*}[t] 
 \centering
 \captionsetup{justification=centering}
 \input{tables/duplicator}
 \caption{
 The comparison of Selector and Duplicators}
 \label{tab:comparison}
-\end{table}
+\end{table*}
 
 These results are both expected and surprising. As expected, restricting the
 choice to edge and a single Nautilus request and using a conditional

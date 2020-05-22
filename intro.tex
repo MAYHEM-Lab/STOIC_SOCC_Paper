@@ -61,13 +61,18 @@ achieves a placement accuracy of 92\% relative to the optimal placement.  In dup
 To do so, STOIC estimates, using execution histories, transfer time (for sending image batches to the public cloud), deployment time (to spin up runtime containers in the public cloud), and execution time (for executing the workloads on the edge and public cloud). The STOIC platform processes the images in batches, performing model training either at an edge cloud deployed locally or on a remote, shared, GPU cloud called Nautilus~\cite{ref:nautilus}.
 \fi
 
-We consider three major contributions from this work: (1) we design and
+We consider three major contributions from this work: 
+\begin{itemize}
+\item We design and
 implement a serverless framework serving IoT requests by leveraging GPU
-acceleration. (2) we investigate feedback control mechanism and various
+acceleration. 
+\item We investigate feedback control mechanism and various
 analytical methodologies to precisely model the unstable edge and public cloud
-environments. (3) we test the efficacy of using this extended serverless model
+environments. 
+\item We test the efficacy of using this extended serverless model
 for machine learning applications that span edge-cloud systems, and
 empirically evaluate the performance of doing so. 
+\end{itemize}
 
 In the following sections, we present the design and implementation of STOIC.
 We then present our experimental methodology and empirical evaluation of the
