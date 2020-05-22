@@ -31,17 +31,17 @@ We do not explore the possibility of overlapping transfer time, deployment time,
 
 \begin{figure}[t] \centering 
 \includegraphics[scale=0.125]{figures/gpu1_latency.png}
-\caption{The distribution of three components in total response time~($T_r$) of 150 executions on GPU1 runtime: Processing time ($T_p$), Deployment time ($T_d$) and Transfer time ($T_t$). The x-axis represents the time range, while the y-axis is the frequency of executions. The deployment time, which is depicted in the red histogram, is volatile and error-prone to prediction.
+\caption{The distribution of three components in total response time~($T_s$) of 150 executions on GPU1 runtime: Processing time ($T_p$), Deployment time ($T_d$) and Transfer time ($T_t$). The x-axis represents the time range, while the y-axis is the frequency of executions. The deployment time, which is depicted in the red histogram, is volatile and error-prone to prediction.
 \label{fig:breakdown}}
 \end{figure}
 
-In the experiment, we model the batch size as a normal distribution with mean $42.75$ and variance $39.5$: $\mathbf{N}(\mu = 42.75, \sigma^2 = 39.5)$, derived from the WTB 2016 image corpus and the arrival rate of images at the cameras. Figure~\ref{fig:breakdown} shows an example histograms for processing time, transfer time and deployment time on Nautilus for GPU1 runtime using 150 batches drawn from this normal distribution. On the x-axis, we show the elapsed time for processing time, transfer time, and deployment time respectively.  Note that processing time and transfer time are relatively stable compared to deployment time. 
+In the experiment, we model the batch size using simulator that leverages historical data derived from the WTB image corpus from 2013 to 2017 and the arrival rate of images at the cameras. Figure~\ref{fig:breakdown} shows an example histograms for processing time, transfer time and deployment time on Nautilus for GPU1 runtime using 150 batches drawn from the simulator. On the x-axis, we show the elapsed time for processing time, transfer time, and deployment time respectively.  Note that processing time and transfer time are relatively stable compared to deployment time. 
 
 \subsection{Selector Evaluation}
 
-We evaluate the STOIC Selector over a 24-hour time period consisting of 154 image batches, the sizes of which are drawn randomly from $\mathbf{N}(\mu = 42.75, \sigma^2 = 39.5)$.  Each batch is executed on the edge cloud, on the Nautilus CPU, on one Nautilus GPU and on two Nautilus GPUs. Over the test period, the STOIC Selector chooses the fastest (lowest total response time) from among these four options $131$ times out of the $154$ runs or $85\%$ of the time. That is, STOIC correctly identifies the fastest option with a success rate of $85\%$.
+We evaluate the STOIC Selector over a 24-hour time period consisting of 162 image batches, the sizes of which are drawn randomly from the simulator. Each batch is executed on the edge cloud, on the Nautilus CPU, on one Nautilus GPU and on two Nautilus GPUs. Over the test period, the STOIC Selector chooses the fastest (lowest total response time) from among these four options $149$ times out of the $162$ runs or $92\%$ of the time. That is, STOIC correctly identifies the fastest option with a success rate of $92\%$.
 
-Further, the optimal selection (i.e. an oracle selection that is $100\%$ correct) would have resulted in an aggregate total latency of $7713$ seconds and the worst case aggregate latency as $18563$ seconds compared to a STOIC aggregate latency of $8401$ seconds.  Thus STOIC achieves an aggregate latency that is $8\%$ slower than optimal, but $55\%$ ($2.3$) times faster than the worst case. Table~\ref{tab:selector} summarizes these results. In the table, we report the success rate, the percentage of optimal, and the percentage of worst case aggregate response times achieved by STOIC. 
+Further, the optimal selection (i.e. an oracle selection that is $100\%$ correct) would have resulted in an aggregate total latency of $10022$ seconds and the worst case aggregate latency as $35940$ seconds compared to a STOIC aggregate latency of $10770$ seconds.  Thus STOIC achieves an aggregate latency that is $5.3\%$ slower than optimal, but $70\%$ ($3.33$) times faster than the worst case. Table~\ref{tab:selector} summarizes these results. In the table, we report the success rate, the percentage of optimal, and the percentage of worst case aggregate response times achieved by STOIC. 
 
 \begin{table}[t] 
 \begin{centering}
@@ -50,7 +50,7 @@ Further, the optimal selection (i.e. an oracle selection that is $100\%$ correct
 \end{centering}
 \caption{
 STOIC Selector results. The success rate is the percentage of correct decisions
-(out of 154 trials) made by STOIC.  ``Optimal'' shows the percentage of the
+(out of 162 trials) made by STOIC.  ``Optimal'' shows the percentage of the
 optimal selection aggregate response time and ``Worst Case'' shows the percentage of the worst case 
 selection aggregate response time made by STOIC.}
 \label{tab:selector}
@@ -131,7 +131,7 @@ Nautilus savings (positive values) and loss (negative values) for STOIC Duplicat
 \label{tab:savings}
 \end{table}
 
-Recall that the total optimal time (the time associated with the minimum execution of each batch) is $7713$ seconds. The positive values in the table indicate the total time returned to Nautilus (that would have otherwise been used) by selecting the edge for execution.  Note that these savings correspond to the results shown in Table~\ref{tab:comparison} for the Duplicator. That is, they are the savings that STOIC was able to achieve while implementing a schedule within either $1\%$ or $2\%$ of optimal.  The loss (negative values) shows the amount of Nautilus time that was used unnecessarily. That is, when STOIC Duplicator chose conditionally to use the GPU or GPUs and the edge finishes first, the elapsed time on Nautilus is unnecessarily ``lost.'' Clearly from the table, Duplicator saves more Nautilus time than it loses. Thus, we infer that STOIC in duplicator mode optimizes the time to solution (Table~\ref{tab:comparison}) while utilizing the expensive Nautilus resource efficiently (Table~\ref{tab:savings}) by using the edge cloud node speculatively.  
+Recall that the total optimal time (the time associated with the minimum execution of each batch) is $10022$ seconds. The positive values in the table indicate the total time returned to Nautilus (that would have otherwise been used) by selecting the edge for execution.  Note that these savings correspond to the results shown in Table~\ref{tab:comparison} for the Duplicator. That is, they are the savings that STOIC was able to achieve while implementing a schedule within either $1\%$ or $2\%$ of optimal.  The loss (negative values) shows the amount of Nautilus time that was used unnecessarily. That is, when STOIC Duplicator chose conditionally to use the GPU or GPUs and the edge finishes first, the elapsed time on Nautilus is unnecessarily ``lost.'' Clearly from the table, Duplicator saves more Nautilus time than it loses. Thus, we infer that STOIC in duplicator mode optimizes the time to solution (Table~\ref{tab:comparison}) while utilizing the expensive Nautilus resource efficiently (Table~\ref{tab:savings}) by using the edge cloud node speculatively.  
 
 
 % (47.43\% to the

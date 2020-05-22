@@ -9,16 +9,16 @@ To leverage hardware acceleration and distributed scheduling within a serverless
 We have designed the system for image classification applications. In this paper, we investigate its use for processing images from multiple, motion-triggered camera traps (sensors) deployed to monitor wildlife across the Sedgwick Natural Reserve~\cite{ref:sedgwick}.
 
 \subsection{Edge Controller}
-The edge controller is a server that runs in an outbuilding at the reserve. It communicates wirelessly with the sensors and triggers analysis/computation upon their arrival. The edge controller is connected to the UCSB campus via a microwave link. When a camera trap detects motion, it takes photos and persists the images in flash storage. Periodically, the sensors transfer saved photos to the edge controller. STOIC runs on the edge controller and its execution is triggered by the arrival of image batches. When a batch arrives, STOIC transfers it to an edge cloud where the tasks are scheduled across +1 cloud components.
+The edge controller is a server that runs in an outbuilding at the reserve. It communicates wirelessly with the sensors and triggers analysis/computation upon their arrival. The edge controller is connected to the UCSB campus via a microwave link. When a camera trap detects motion, it takes photos and persists the images in flash storage. Periodically, the sensors transfer saved photos to the edge controller. Up to the end of a transfer cycle, edge controller packages all images generated within this hour and transfers it to the public cloud if necessary when the tasks are scheduled on it. STOIC runs on the edge controller and its execution is triggered by the arrival of image batches. 
 
-As an intermediate computational tier between the sensors and the public cloud, the edge cloud can be placed anywhere, preferably near the edge devices, to lower the response latency for the data processing and analytics applications. It consists of four major components: (1) The \textbf{socket client} continuously listens for requests from the edge controller and receives image batches, (2) the \textbf{cloud scheduler} predicts the total latency based on historical data in a local database for each available runtime, (3) the \textbf{requester} dispatches the workload to the runtime having the least latency and triggers the  serverless function via a RESTful HTTP request either locally at the edge cloud or remotely in the public cloud, (4) the \textbf{inquisitor} deploys all runtimes constantly and records the deployment time respectively in the database. We use the inquisitor to establish the time series for predicting deployment latency.
+As an intermediate computational tier between the sensors and the public cloud, the edge controller can be placed anywhere, preferably near the edge devices, to lower the response latency for the data processing and analytics applications. It consists of three major components: (1) The \textbf{cloud scheduler} predicts the total latency based on historical data in a local database for each available runtime, (2) the \textbf{requester} firstly dispatches the image batch to a dedicated Ceph~\cite{ref:ceph} S3 bucket when the workload is scheduled at the public cloud, secondly deploys the runtime having the least latency and, lastly, triggers the  serverless function via a RESTful HTTP request either locally at the edge cloud or remotely in the public cloud, (3) the \textbf{inquisitor} constantly deploys all runtimes as Kubernetes pods~\cite{ref:pods} and records the deployment time respectively in the database. We use the inquisitor to establish the time series for predicting deployment latency.
 
 The edge cloud that we use in this study is deployed 
 in our lab on campus, which is connected to both the reserve and the Internet. It consists of a cluster of nine Intel NUCs~\cite{ref:nucs} (6i7KYK), each with two Intel Core i7-6770HQ 4-core processors (6M Cache, 2.60 GHz) and 32GB of DDR4-2133+ RAM connected via two channels. The cluster is managed using the Eucalyptus cloud system~\cite{ref:euca}, which mirrors the Amazon Web Services (AWS) interfaces for Elastic Compute Cloud (EC2) to host Linux virtual machine instances and Simple Storage Service (S3) to provide object storage.
  
  \subsection{Public/Private Cloud}
 
-To investigate the use of the serverless architecture with hardware accelerators, we employ a shared, multiuniversity, GPU cloud, called  Nautilus~\cite{ref:nautilus}, as our remote cloud system. Nautilus is an Internet-connected, HyperCluster research platform developed by researchers at UC San Diego, the National Science Foundation, the Department of Energy, and multiple, participating universities globally.  Nautilus is designed for running data and computationally intensive applications and uses Kubernetes~\cite{ref:k8s} to manage and scale containerized applications. It also uses Rook~\cite{ref:rook} to integrate Ceph~\cite{ref:ceph} for data storage. As of March 2020, Nautilus consists of 176 computing nodes across the US and a total of 524 GPUs in the cluster. All nodes are connected via a multi-campus network. In this study, we consider Nautilus as a public cloud that enables us to leverage hardware acceleration (GPUs) in the serverless architecture to serve edge devices. 
+To investigate the use of the serverless architecture with hardware accelerators, we employ a shared, multiuniversity, GPU cloud, called  Nautilus~\cite{ref:nautilus}, as our remote cloud system. Nautilus is an Internet-connected, HyperCluster research platform developed by researchers at UC San Diego, the National Science Foundation, the Department of Energy, and multiple, participating universities globally.  Nautilus is designed for running data and computationally intensive applications and uses Kubernetes~\cite{ref:k8s} to manage and scale containerized applications. It also uses Rook~\cite{ref:rook} to integrate Ceph for data storage. As of May 2020, Nautilus consists of 176 computing nodes across the US and a total of 543 GPUs in the cluster. All nodes are connected via a multi-campus network. In this study, we consider Nautilus as a public cloud that enables us to leverage hardware acceleration (GPUs) in the serverless architecture to serve edge devices. 
 
 One major challenge we face with such deployments is hardware heterogeneity and performance variability. On Nautilus, we have observed 44 different types of CPU (e.g. Intel Xeon, AMD EPYC, among others) and 9 GPU types (e.g. Nvidia 1080Ti, K40, etc.). Both CPUs and GPUs of different types have different performance characteristics. Besides, ceph storage is run on dedicated nodes that distributed globally.
 
@@ -35,7 +35,7 @@ STOIC considers each of these deployment options as part of its scheduling decis
 \subsection{Execution Time Estimation}
  As depicted in Figure~\ref{fig:STOIC}, 
 the STOIC socket client executes in the edge 
-cloud and listens for requests from the edge controller (machine learning job requests). After a preset period (parameterizable but currently set to an hour), STOIC estimates total response time~($T_r$) of a requested batch, based on 4 different runtime scenarios. The total response time ($T_s$) includes data transfer time~($T_t$), runtime deployment time~($T_d$) and the corresponding processing time~($T_p$).
+cloud and listens for requests from the edge controller (machine learning job requests). After a preset period (parameterizable but currently set to an hour), STOIC estimates total response time~($T_s$) of a requested batch, based on 4 different runtime scenarios. The total response time ($T_s$) includes data transfer time~($T_t$), runtime deployment time~($T_d$) and the corresponding processing time~($T_p$). We define total response time~($T_s$) as $T_s = T_t + T_d + T_p$.
  
  \subsubsection{Transfer time~($T_t$)} measures the time spent in transmitting a compressed batch of images from the edge controller to edge cloud and public cloud. We calculate transfer time as ${T_t = F_b / B_c}$ where $F_b$ represents the file size of batch and $B_c$ represents the bandwidth at the moment provided by a bandwidth monitor at the edge controller. 
  
@@ -56,8 +56,7 @@ cloud and listens for requests from the edge controller (machine learning job re
 \end{table}
  
 
-We observe significant variation in deployment time on Nautilus for different times of the day. To accurately predict deployment time, we analyze deployment times as a time series using three methods: (1) auto-regression modeling, (2) average sliding window, and (3) median sliding window. We then compare the minimum 
-Mean Absolute Error (MAE) from each to select the best modeling methodology. 
+We observe significant variation in deployment time on Nautilus for different times of the day. To accurately predict deployment time, we analyze deployment times as a time series using three methods: (1) auto-regression modeling, (2) average sliding window, and (3) median sliding window. Auto-regression~\cite{ref:autoreg} is a time series modeling technique based on the auto-correlation between previous time steps and following ones. Average sliding window is the moving average~\cite{ref:moveavg} scanning through the time series by a fixed-length window. Similarly, the median sliding window is the moving median throughout the time series. All the window sizes used for three modeling processes are optimized based on historical data of deployment time~($T_d$) in January, 2020. We then compare the minimum Mean Absolute Error (MAE) from each to select the best modeling methodology. 
 
 We consider a time series of 1244 data points for each runtime. Figure~\ref{fig:deployment} shows representative analytics for \textit{gpu1} deployment time, in which MAE oscillates as window size varies. We observe that the median sliding window reaches lower minimum MAE than average sliding window at optimal window size. As listed in Table~\ref{tab:deployment}, all three runtimes achieve the lowest minimum MAE using median sliding window. Therefore, STOIC adopts this methodology for deployment time prediction. 
 
@@ -65,7 +64,39 @@ To form a control-loop feedback mechanism, STOIC constantly calibrates the optim
  
 \subsubsection{Processing time~($T_p$)} is the execution time of a specific machine learning task and the target of task scheduling across the hybrid cloud. STOIC formulates a linear regression on execution time histories and uses it to predict processing time, based on the batch size. Specifically, we use Bayesian Ridge Regression~\cite{ref:brr} due to its robustness to ill-posed problems (relative to ordinary least squares regression~\cite{ref:ols}). STOIC queries the database for the most recent processing time data (e.g. 10 data points) for each regression. This ensures that the parameters of the regression line reflect the current runtime performance.
  
-As part of our investigations into this approach, we have found that this approach is highly susceptible to outliers. The root cause is sporadic congestion and maintenance (for nodes, networking, etc.) of the public cloud. Deviating significantly from the average, outliers skew the regression line and overestimate the runtime latency for extended periods of time (due to the windowing approach). We thus update the regression using a random sample consensus (RANSAC) technique~\cite{ref:ransac}, which iteratively removes outliers from the regression.
+As part of our investigations into this approach, we have found that this approach is highly susceptible to outliers. The root cause is sporadic congestion and maintenance (for nodes, networking, etc.) of the public cloud. Deviating significantly from the average, outliers skew the regression line and overestimate the runtime latency for extended periods of time (due to the windowing approach). We thus update the regression using a random sample consensus (RANSAC) technique~\cite{ref:ransac}, which iteratively removes outliers from the regression. The algorithm~\ref{algo:ransac} illustrates the implemented RANSAC approach.
+
+\begin{algorithm}[]
+\caption{Random Sample Consensus}
+\label{algo:ransac}
+\SetAlgoLined
+\KwData{
+(1) Observation set of Process time $T_p$\\
+(2) Bayesian Ridge Regression model $M$\\
+(3) Minimum sample size $n$\\
+(4) Residual threshold $t$\\
+(5) Maximum iteration $k$ \\
+(6) Required inliner size $d$ \\ 
+(7) Minimum Root Mean Square Error $e$ \\
+}
+\KwResult{A set of parameters that best fits the data}
+ \While{iterations $\leq$ k}{
+    curr\_sample := $n$ data points from observation\;
+    curr\_model := $M$ regressed on curr\_sample\;
+    fit\_data := empty set\;
+    \For{ every data point $p$ in curr\_sample}{
+        \uIf{error of $p$ $\leq$ $t$}{
+            $p$ $\to$ fit\_data\;
+        }
+    }
+    \eIf{fit\_data size $\geq$ $d$}{
+        \uIf{curr\_error < $e$}{
+            Update $M$ and $e$
+        }
+    }{Increment iteration}
+ }
+ return $M$
+\end{algorithm}
  
  \begin{figure}
     \centering
@@ -82,7 +113,27 @@ As part of our investigations into this approach, we have found that this approa
  \subsubsection{Adaptability}
  
 To verify that STOIC's estimation of execution time captures the actual latency of the public cloud, we repeatedly execute our application 50 times with 150-image batch using the \textit{gpu1} runtime. Depicted in Figure~\ref{fig:timeline}, we observe that actual total latency varies significantly and predicted total latency has a non-negligible difference from the actual total latency at the beginning of the experiment. However, over time, as STOIC learns the various latencies of the system, the difference is significantly reduced. In Table~\ref{tab:timeline}, we report the percentage mean absolute error (PMAE), which we compute as the MAE divided by mean latency. The decrease in all three PMAE values in the second half of the execution trace also shows STOIC's adaptability.
+
+\begin{figure}[t] \centering 
+\includegraphics[scale=0.36]{figures/Hourly_act.png}
+\caption{Wildlife Hourly Activity Level. The figure demonstrates the mean activity level of wildlife throughout a day. Based on the curve, 1PM and 8PM are two peak hours of animal activities.
+\label{fig:hour_act}}
+\end{figure} 
  
+ 
+\begin{figure}[t] \centering 
+\includegraphics[scale=0.36]{figures/ecdf.png}
+\caption{Conditional Empirical Cumulative Distribution Function. The STOIC image batch simulator is based on this function and random probabilities [0, 1) from a uniform distribution.
+\label{fig:cecdf}}
+\end{figure} 
+ 
+\subsection{Simulator}
+
+Since the network infrastructure was under construction at Sedgwick natural reserve when we built up STOIC, we created a simulator that mimics the generation of image batches from camera traps. First, we obtain a set of motion-detected images from July 13th, 2013 to Jan. 15th, 2017. After excluding maintenance days in between, we process 1136 effective days (27264 hours) of data. The maximum size of hourly image batch is 2450, whereas the minimum size is unsurprisingly zero, which constitute 18139 hours out of 27264 hours (66.53\%). On average, the hourly image batch size is 25. Figure~\ref{fig:hour_act} illustrates the wildlife hourly activity level based on the image batch size. We infer from the curve that 1PM and 8PM are two peak hours of animal activities during daytime. 
+
+To simulate the generation of image batches from camera traps, we construct an conditional empirical cumulative distribution function~(ECDF) based on probability definition of  $Pr(x < K | x > 0)$, where x is the image batch size and K is the cutoff value. This conditional ECDF effectively represents the trajectory of animal activity level and makes the evaluation empirical. Figure~\ref{ref:cecdf} plots the conditional ECDF. The x-axis is the image batch size ranging from zero to 2450, whereas the y-axis is the cumulative probability. During the execution of STOIC, the simulator first generates a random number in [0, 1) from a uniform distribution and secondly retrieves the corresponding image batch size from the conditional ECDF. Using this process, we are able to evaluate and draw strong conclusions, regarding STOIC's performance and efficiency by a real-world streaming data flow.
+
+
 
  \subsection{Implementation}
 
