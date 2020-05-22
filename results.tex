@@ -1,14 +1,53 @@
-In this section, we empirically evaluate STOIC's performance on image processing tasks. We implement the application as a serverless function for STOIC to schedule and execute.
+In this section, we empirically evaluate STOIC's performance on image
+processing tasks. We implement the application as a serverless function for
+STOIC to schedule and execute.
 
-In each experiment, we use STOIC's scheduler to determine which resource to use for function execution (among a small set of feasible choices). We then run the function on \textit{all} resources and compare the choice made by STOIC to the best (shortest duration) execution across all possible choices.
+In each experiment, we use STOIC's scheduler to determine which resource to
+use for function execution (among a small set of feasible choices). We then
+run the function on \textit{all} resources and compare the choice made by
+STOIC to the best (shortest duration) execution across all possible choices.
 
 \subsection{Experimental Setup}
 
-The image processing application that we use as a benchmark classifies animal images from a wildlife monitoring system called ``Where's The Bear" (WTB)~\cite{ref:wtb}. ``Where's The Bear" is an end-to-end distributed data acquisition and analytics system that automatically analyzes camera trap images collected by cameras sited at the Sedgwick Natural Reserve~\cite{ref:sedgwick} in Santa Barbara County, California. The WTB deployment includes an ``edge controller'' located near the cameras that are used to acquire the image data before it is transmitted over a slow network link to either a private cloud located at UCSB or to Amazon AWS for web hosting. In this work, we explore using the Nautilus distributed GPU cloud~\cite{ref:nautilus} along with the edge cloud to optimize image classification on a convolutional neural network (CNN)~\cite{ref:cnn} implemented by Tensorflow and Scikit-learn~\cite{ref:scikit}. 
+The image processing application that we use as a benchmark classifies animal
+images from a wildlife monitoring system.
+%called ``Where's The Bear"
+%(WTB)~\cite{ref:wtb}. ``Where's The Bear" is an end-to-end distributed data
+%acquisition and analytics system that automatically analyzes camera trap
+%images collected by cameras sited at the Sedgwick Natural
+%Reserve~\cite{ref:sedgwick} in Santa Barbara County, California. The WTB
+The 
+deployment includes an ``edge controller'' located near the cameras that are
+used to acquire the image data before it is transmitted over a slow network
+link to either a private cloud located at a research facility located
+approximately 50 miles from the site or to Amazon AWS for web
+hosting. In this work, we explore using the Nautilus distributed GPU
+cloud~\cite{ref:nautilus} along with the edge cloud to optimize image
+classification on a convolutional neural network (CNN)~\cite{ref:cnn}
+implemented by Tensorflow and Scikit-learn~\cite{ref:scikit}. 
 
-In total, there are five classes that we consider: Bird, Fox, Rodent, Human and Empty. Since class size is unbalanced due to the frequency of animal occurrences, we up-sample minority classes (e.g. fox) using the Keras ImageDataGenerator~\cite{ref:keras}. Doing so ensures that the classification model is not biased. We resize every image in the WTB dataset to $1920 \times 1080$, and for each class, the dataset contains 251 images used to train the CNN model. Once model training is complete, the application stores this model in hdf5 format in cloud storage at both edge cloud (disk storage) and Nautilus (a shared volume in a Ceph file system). 
+In total, there are five classes that we consider: Bird, Fox, Rodent, Human
+and Empty. Since class size is unbalanced due to the frequency of animal
+occurrences, we up-sample minority classes (e.g. fox) using the Keras
+ImageDataGenerator~\cite{ref:keras}. Doing so ensures that the classification
+model is not biased. We resize every image in the WTB dataset to $1920 \times
+1080$, and for each class, the dataset contains 251 images used to train the
+CNN model. Once model training is complete, the application stores this model
+in hdf5 format in cloud storage at both edge cloud (disk storage) and Nautilus
+(a shared volume in a Ceph file system). 
 
-To minimize transfer overhead, we move images from Sedgwick to Nautilus in batches rather than one-at-a-time. To better harness the multiple GPU runtime, the application spawns a process (worker) for each GPU and adds all images in a batch to a shared asynchronous queue. Upon the execution, workers remove images (one at a time) from the shared queue until it is exhausted. This mechanism ensures multiple GPUs evenly divide the workloads and achieve quasi-linear acceleration at the application level, where the perfect linear speed-up is unattainable because of model loading and memory transfer overhead~\cite{ref:multi_gpu}. 
+To minimize transfer overhead, we move images from 
+the wildlife refuge
+%Sedgwick 
+to Nautilus in
+batches rather than one-at-a-time. To better harness the multiple GPU runtime,
+the application spawns a process (worker) for each GPU and adds all images in
+a batch to a shared asynchronous queue. Upon the execution, workers remove
+images (one at a time) from the shared queue until it is exhausted. This
+mechanism ensures multiple GPUs evenly divide the workloads and achieve
+quasi-linear acceleration at the application level, where the perfect linear
+speed-up is unattainable because of model loading and memory transfer
+overhead~\cite{ref:multi_gpu}. 
 
 
 \iffalse
@@ -35,13 +74,33 @@ We do not explore the possibility of overlapping transfer time, deployment time,
 \label{fig:breakdown}}
 \end{figure}
 
-In the experiment, we model the batch size using simulator that leverages historical data derived from the WTB image corpus from 2013 to 2017 and the arrival rate of images at the cameras. Figure~\ref{fig:breakdown} shows an example histograms for processing time, transfer time and deployment time on Nautilus for GPU1 runtime using 150 batches drawn from the simulator. On the x-axis, we show the elapsed time for processing time, transfer time, and deployment time respectively.  Note that processing time and transfer time are relatively stable compared to deployment time. 
+In the experiment, we model the batch size using simulator that leverages
+historical data derived from the WTB image corpus from 2013 to 2017 and the
+arrival rate of images at the cameras. Figure~\ref{fig:breakdown} shows an
+example histograms for processing time, transfer time and deployment time on
+Nautilus for GPU1 runtime using 150 batches drawn from the simulator. On the
+x-axis, we show the elapsed time for processing time, transfer time, and
+deployment time respectively.  Note that processing time and transfer time are
+relatively stable compared to deployment time. 
 
 \subsection{Selector Evaluation}
 
-We evaluate the STOIC Selector over a 24-hour time period consisting of 162 image batches, the sizes of which are drawn randomly from the simulator. Each batch is executed on the edge cloud, on the Nautilus CPU, on one Nautilus GPU and on two Nautilus GPUs. Over the test period, the STOIC Selector chooses the fastest (lowest total response time) from among these four options $149$ times out of the $162$ runs or $92\%$ of the time. That is, STOIC correctly identifies the fastest option with a success rate of $92\%$.
+We evaluate the STOIC Selector over a 24-hour time period consisting of 162
+image batches, the sizes of which are drawn randomly from the simulator. Each
+batch is executed on the edge cloud, on the Nautilus CPU, on one Nautilus GPU
+and on two Nautilus GPUs. Over the test period, the STOIC Selector chooses the
+fastest (lowest total response time) from among these four options $149$ times
+out of the $162$ runs or $92\%$ of the time. That is, STOIC correctly
+identifies the fastest option with a success rate of $92\%$.
 
-Further, the optimal selection (i.e. an oracle selection that is $100\%$ correct) would have resulted in an aggregate total latency of $10022$ seconds and the worst case aggregate latency as $35940$ seconds compared to a STOIC aggregate latency of $10770$ seconds.  Thus STOIC achieves an aggregate latency that is $5.3\%$ slower than optimal, but $70\%$ ($3.33$) times faster than the worst case. Table~\ref{tab:selector} summarizes these results. In the table, we report the success rate, the percentage of optimal, and the percentage of worst case aggregate response times achieved by STOIC. 
+Further, the optimal selection (i.e. an oracle selection that is $100\%$
+correct) would have resulted in an aggregate total latency of $10022$ seconds
+and the worst case aggregate latency as $35940$ seconds compared to a STOIC
+aggregate latency of $10770$ seconds.  Thus STOIC achieves an aggregate
+latency that is $5.3\%$ slower than optimal, but $70\%$ ($3.33$) times faster
+than the worst case. Table~\ref{tab:selector} summarizes these results. In the
+table, we report the success rate, the percentage of optimal, and the
+percentage of worst case aggregate response times achieved by STOIC. 
 
 \begin{table}[t] 
 \begin{centering}
@@ -56,17 +115,48 @@ selection aggregate response time made by STOIC.}
 \label{tab:selector}
 \end{table}
 
-We further analyze the data points where STOIC made erroneous selections and found two sources of error. First, the most error occurs around two batch sizes where the total response times of runtime have approximately same latency. To be specific, the edge and GPU runtimes cross over at 35 image batch size, and 90 image batch size for the GPU1 and GPU2 runtimes. At these cross-points, the close predictions of latency lead to incorrect selection. Second, the deployment times for GPU runtime are volatile and error-prone to prediction. As a representative instance, Figure~\ref{fig:breakdown} demonstrates the distribution of processing time ($T_p$), transfer time ($T_t$) and deployment time ($T_d$) of GPU1 runtime. We observe geometric distribution from the histogram of processing time and transfer time, whereas deployment time varies irregularly with many outliers. These two phenomenons lead to mistaken selections in the experiment.
+We further analyze the data points where STOIC made erroneous selections and
+found two sources of error. First, the most error occurs around two batch
+sizes where the total response times of runtime have approximately same
+latency. To be specific, the edge and GPU runtimes cross over at 35 image
+batch size, and 90 image batch size for the GPU1 and GPU2 runtimes. At these
+cross-points, the close predictions of latency lead to incorrect selection.
+Second, the deployment times for GPU runtime are volatile and error-prone to
+prediction. As a representative instance, Figure~\ref{fig:breakdown}
+demonstrates the distribution of processing time ($T_p$), transfer time
+($T_t$) and deployment time ($T_d$) of GPU1 runtime. We observe geometric
+distribution from the histogram of processing time and transfer time, whereas
+deployment time varies irregularly with many outliers. These two phenomenons
+lead to mistaken selections in the experiment.
 
 \subsection{Duplicator Evaluation}
 
-Note that the edge cloud node is not a shared resource -- it is dedicated to the application. It is implemented using inexpensive hardware that is connected to standard 120 VAC power (in a closet at Sedgwick).  As a result, it is possible to use the edge cloud for \textit{every} batch even when it is not the fastest.  
+Note that the edge cloud node is not a shared resource -- it is dedicated to
+the application. It is implemented using inexpensive hardware that is
+connected to standard 120 VAC power (in a closet in a management building
+located at the refuge).
+%at Sedgwick).  
+As a result,
+it is possible to use the edge cloud for \textit{every} batch even when it is
+not the fastest.  
 
-Put another way, there is no cost to running the edge cloud speculatively while data is transferring to Nautilus and the application waits for Nautilus to deploy pods for the cpu and GPUx runtimes. If STOIC (using Selector) predicts that Nautilus will be faster, and STOIC is correct, the work on the edge cloud is ``duplicate work'' which is unnecessary. However because of the deployment variability, it may be that the edge cloud speculative execution finishes ahead of that runtime scheduled to Nautilus.
+Put another way, there is no cost to running the edge cloud speculatively
+while data is transferring to Nautilus and the application waits for Nautilus
+to deploy pods for the cpu and GPUx runtimes. If STOIC (using Selector)
+predicts that Nautilus will be faster, and STOIC is correct, the work on the
+edge cloud is ``duplicate work'' which is unnecessary. However because of the
+deployment variability, it may be that the edge cloud speculative execution
+finishes ahead of that runtime scheduled to Nautilus.
 
-However, unlike the edge cloud node, Nautilus is a shared resource.  Thus we do not wish to ``waste'' execution time on Nautilus unnecessarily. Thus, in this setting, the cost of duplicate work on the edge is minimal compared to the cost of potentially duplicate work on Nautilus. If this were not true, we would simply launch the job both at the edge and on Nautilus and use whichever finished first.
+However, unlike the edge cloud node, Nautilus is a shared resource.  Thus we
+do not wish to ``waste'' execution time on Nautilus unnecessarily. Thus, in
+this setting, the cost of duplicate work on the edge is minimal compared to
+the cost of potentially duplicate work on Nautilus. If this were not true, we
+would simply launch the job both at the edge and on Nautilus and use whichever
+finished first.
 
-Thus we explore a second scheduling strategy that attempts to minimize total response time in light of the following assumptions.
+Thus we explore a second scheduling strategy that attempts to minimize total
+response time in light of the following assumptions.
 \begin{itemize}
 \item Duplicating unneeded work on the edge carries no penalty.
 \item Duplicating unneeded work in Nautilus is expensive.
@@ -76,15 +166,46 @@ Nautilus resources parsimoniously.
 \end{itemize}
 We call the STOIC scheduler that attempts to minimize response times under these assumptions -- the Duplicator.
 
-Further, we noticed that the Naultilus cpu was seldom a good choice in practice. The application must ``pay'' for the transfer and incur the deployment time variability to acquire a CPU that is almost equivalent to the edge node CPU.  Thus, in the ``real world'' version of the STOIC scheduler for WTB, we use the Duplicator with Nautilus GPUs only.
+Further, we noticed that the Naultilus cpu was seldom a good choice in
+practice. The application must ``pay'' for the transfer and incur the
+deployment time variability to acquire a CPU that is almost equivalent to the
+edge node CPU.  Thus, in the ``real world'' version of the STOIC scheduler for
+WTB, we use the Duplicator with Nautilus GPUs only.
 
-The scheduling algorithm starts the task on the edge cloud node and also begins the transfer to Nautilus. It then waits for the Nautilus deployment time and, when the pod is fully deployed, it predicts whether to use the freshly acquired GPU or GPUs (i.e. to ``switch'' to the GPU(s)) or to abandon the request and to complete the job on the edge.  To do so, STOIC must predict the \textit{remaining} edge time at the moment the GPU pod is deployed, and compare this remaining time to the predicted GPU processing time.  
+The scheduling algorithm starts the task on the edge cloud node and also
+begins the transfer to Nautilus. It then waits for the Nautilus deployment
+time and, when the pod is fully deployed, it predicts whether to use the
+freshly acquired GPU or GPUs (i.e. to ``switch'' to the GPU(s)) or to abandon
+the request and to complete the job on the edge.  To do so, STOIC must predict
+the \textit{remaining} edge time at the moment the GPU pod is deployed, and
+compare this remaining time to the predicted GPU processing time.  
 
-The Duplicator prediction is \textit{conditional} upon the amount of time that has elapsed during transfer and deployment to Nautilus. If STOIC predicts that the GPU pod will start and complete their processing before the edge completes what remains of the job, it allows the Nautilus and edge cloud executions to execute concurrently. If the Nautilus job completes first, the edge cloud execution is terminated.  Otherwise, if the edge cloud execution finishes first (i.e. the prediction was incorrect) then the Nautilus job is terminated (and the time between the start of the Nautilus job and the end of the cloud job is ``wasted'' Nautilus time).
+The Duplicator prediction is \textit{conditional} upon the amount of time that
+has elapsed during transfer and deployment to Nautilus. If STOIC predicts that
+the GPU pod will start and complete their processing before the edge completes
+what remains of the job, it allows the Nautilus and edge cloud executions to
+execute concurrently. If the Nautilus job completes first, the edge cloud
+execution is terminated.  Otherwise, if the edge cloud execution finishes
+first (i.e. the prediction was incorrect) then the Nautilus job is terminated
+(and the time between the start of the Nautilus job and the end of the cloud
+job is ``wasted'' Nautilus time).
 
-Alternatively, when STOIC predicts that the edge cloud will finish first, it returns the GPU resources to Nautilus and run only the edge cloud job. If the Nautilus job would have completed first (i.e. the conditional prediction in favor of the edge is incorrect) then the time between when the Nautilus job would have finished and the time that the edge cloud job completes is additional delay (compared to having made a correct prediction).
+Alternatively, when STOIC predicts that the edge cloud will finish first, it
+returns the GPU resources to Nautilus and run only the edge cloud job. If the
+Nautilus job would have completed first (i.e. the conditional prediction in
+favor of the edge is incorrect) then the time between when the Nautilus job
+would have finished and the time that the edge cloud job completes is
+additional delay (compared to having made a correct prediction).
 
-Thus, choosing incorrectly (i.e. a failure) occurs when the actual completion time exceeds the time of the runtime corresponding to the minimum prediction (in either edge or GPU case) made by STOIC. That is, a ``failure'' for the Duplicator occurs when STOIC makes a conditional choice (i.e. continue on edge or to include Nautilus) and the choice results in a longer \textit{actual} response time than the one not chosen. Table~\ref{tab:comparison} shows the performance of the Duplicator using the edge and one GPU and, separately, the edge and two GPUs from Nautilus. We duplicate the results for the Selector from Table~\ref{tab:selector} for comparison purposes.
+Thus, choosing incorrectly (i.e. a failure) occurs when the actual completion
+time exceeds the time of the runtime corresponding to the minimum prediction
+(in either edge or GPU case) made by STOIC. That is, a ``failure'' for the
+Duplicator occurs when STOIC makes a conditional choice (i.e. continue on edge
+or to include Nautilus) and the choice results in a longer \textit{actual}
+response time than the one not chosen. Table~\ref{tab:comparison} shows the
+performance of the Duplicator using the edge and one GPU and, separately, the
+edge and two GPUs from Nautilus. We duplicate the results for the Selector
+from Table~\ref{tab:selector} for comparison purposes.
 
 \begin{table}[t] 
 \centering
@@ -95,13 +216,41 @@ The comparison of Selector and Duplicators}
 \label{tab:comparison}
 \end{table}
 
-These results are both expected and surprising. As expected, restricting the choice to edge and a single Nautilus request and using a conditional prediction at deployment time (as opposed to a ranking at the beginning) as a success criterion improves the success rate dramatically. We do not claim that Duplicator is better than Selector in terms of success rate. Instead, Duplicator enables a more dependable scheduling strategy for WTB based on conditional predictions rather than resource ranking. Surprisingly, however, requesting 2 GPUs improves both success rate and aggregate response time relative to choosing one.
+These results are both expected and surprising. As expected, restricting the
+choice to edge and a single Nautilus request and using a conditional
+prediction at deployment time (as opposed to a ranking at the beginning) as a
+success criterion improves the success rate dramatically. We do not claim that
+Duplicator is better than Selector in terms of success rate. Instead,
+Duplicator enables a more dependable scheduling strategy for the
+classification application based on
+conditional predictions rather than resource ranking. Surprisingly, however,
+requesting 2 GPUs improves both success rate and aggregate response time
+relative to choosing one.
 
-This result surprised us for two reasons. First, because there was greater deployment variance and a larger mean deployment time for two GPUs, we expect that the edge (which is more predictable) would generate a greater success rate, but a larger aggregate response time. Put another way, we expected that STOIC would make safer predictions favoring the edge in the two GPU case, but the cost of this safety would be aggregate response time. Empirically, however, we observe that STOIC ``risks'' predicting the two GPU deployment more frequently, but that it amortizes this risk effectively because the two GPU execution is faster.
+This result surprised us for two reasons. First, because there was greater
+deployment variance and a larger mean deployment time for two GPUs, we expect
+that the edge (which is more predictable) would generate a greater success
+rate, but a larger aggregate response time. Put another way, we expected that
+STOIC would make safer predictions favoring the edge in the two GPU case, but
+the cost of this safety would be greater aggregate response time. Empirically,
+however, we observe that STOIC ``risks'' predicting the two GPU deployment
+more frequently, but that it amortizes this risk effectively because the two
+GPU execution is faster.
 
-Note that the cost is not large. In practice, the WTB project will use the one GPU case to get a better success rate at the cost of $1\%$ in aggregate response time.  However, it is interesting that STOIC is able to make this risk-reward trade-off explicit. Note also that the worst case is unchanged. This result indicates that there are unusually bad response time, but that \textit{all} STOIC scheduling methods can mitigate them to approximately the same degree.
+Note that the cost is not large. In practice, the 
+application
+%WTB project 
+will use the one
+GPU case to get a better success rate at the cost of $1\%$ in aggregate
+response time.  However, it is interesting that STOIC is able to make this
+risk-reward trade-off explicit. Note also that the worst case is unchanged.
+This result indicates that there are unusually bad response time, but that
+\textit{all} STOIC scheduling methods can mitigate them to approximately the
+same degree.
 
-We conclude our analysis with a quantification of the savings and unnecessary loss of Nautilus time that STOIC Duplicator is able to achieve. Table~\ref{tab:savings} shows the savings and loss of Nautilus time that are
+We conclude our analysis with a quantification of the savings and unnecessary
+loss of Nautilus time that STOIC Duplicator is able to achieve.
+Table~\ref{tab:savings} shows the savings and loss of Nautilus time that are
 realized by the Duplicator heuristic.
 
 %
@@ -131,7 +280,21 @@ Nautilus savings (positive values) and loss (negative values) for STOIC Duplicat
 \label{tab:savings}
 \end{table}
 
-Recall that the total optimal time (the time associated with the minimum execution of each batch) is $10022$ seconds. The positive values in the table indicate the total time returned to Nautilus (that would have otherwise been used) by selecting the edge for execution.  Note that these savings correspond to the results shown in Table~\ref{tab:comparison} for the Duplicator. That is, they are the savings that STOIC was able to achieve while implementing a schedule within either $1\%$ or $2\%$ of optimal.  The loss (negative values) shows the amount of Nautilus time that was used unnecessarily. That is, when STOIC Duplicator chose conditionally to use the GPU or GPUs and the edge finishes first, the elapsed time on Nautilus is unnecessarily ``lost.'' Clearly from the table, Duplicator saves more Nautilus time than it loses. Thus, we infer that STOIC in duplicator mode optimizes the time to solution (Table~\ref{tab:comparison}) while utilizing the expensive Nautilus resource efficiently (Table~\ref{tab:savings}) by using the edge cloud node speculatively.  
+Recall that the total optimal time (the time associated with the minimum
+execution of each batch) is $10022$ seconds. The positive values in the table
+indicate the total time returned to Nautilus (that would have otherwise been
+used) by selecting the edge for execution.  Note that these savings correspond
+to the results shown in Table~\ref{tab:comparison} for the Duplicator. That
+is, they are the savings that STOIC was able to achieve while implementing a
+schedule within either $1\%$ or $2\%$ of optimal.  The loss (negative values)
+shows the amount of Nautilus time that was used unnecessarily. That is, when
+STOIC Duplicator chose conditionally to use the GPU or GPUs and the edge
+finishes first, the elapsed time on Nautilus is unnecessarily ``lost.''
+Clearly from the table, Duplicator saves more Nautilus time than it loses.
+Thus, we infer that STOIC in duplicator mode optimizes the time to solution
+(Table~\ref{tab:comparison}) while utilizing the expensive Nautilus resource
+efficiently (Table~\ref{tab:savings}) by using the edge cloud node
+speculatively.  
 
 
 % (47.43\% to the
