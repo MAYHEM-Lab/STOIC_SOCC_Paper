@@ -3,17 +3,17 @@ Serverless computing (also known as Functions-as-a-Ser\-vice
 service for hosting and automatically scaling applications. Originally
 designed for web
 services~\cite{ref:lambda-webservices,ref:lambda-microservices}, serverless
-defines a simple, event-driven programming model and platform where
+computing defines a simple, event-driven programming model and platform where
 developers write simple, short-lived functions that are invoked by the
 platform in response to specific system-wide events (e.g. storage updates,
 notifications, messages received, changes in state, custom events, etc.). 
-
-% The platform automatically configures and provisions isolated execution environments (e.g. Linux containers) on-demand and users pay only for the resources their functions use during execution. Given its success to date, other public cloud providers and open source communities have released serverless platforms with similar functionality~\cite{gfunctions-16,afunctions-16,openwhisk-16,ironio-16}.
+Serverless platforms automatically configure and provision isolated execution environments (e.g. Linux containers) on-demand and users pay only for the resources their functions use during execution. Given its success to date, other public cloud providers and open source communities have released serverless platforms with similar functionality~\cite{ref:gfunctions-16,ref:afunctions-16,ref:openwhisk-16,ref:ironio-16}.
 
 Moreover, serverless computing has been extended to work at the ``edge'' of
 the network to reduce the response latency and bandwidth associated with
 public cloud use by data-driven applications (e.g.  those that target the
-Internet of Things (IoT)). Doing so is challenging however because there is a
+Internet of Things (IoT))~\cite{aws-greengrass,iotedge-web,iothub-web}. 
+Doing so is challenging however because there is a
 scarcity of compute and storage resources at the edge relative to resource
 rich public and private clouds. Moreover, public/private clouds may offer
 specialized hardware (e.g. GPUs) that can significantly speed up machine
@@ -44,34 +44,32 @@ connectivity.
 % removed for blid reviewaaaa; at Sedgwick Research
 %Reserve~\cite{ref:sedgwick}. 
 STOIC has two placement scenarios: the first
-places functions only at one runtime with least predicted latency, whereas the
+places functions only at the runtime with the least predicted latency, whereas the
 second places functions concurrently at both edge and public cloud, but then
-terminates the public cloud execution when it determines that the edge will
-finish sooner.
-The former scenario
+terminates public cloud execution if/when it determines that the edge will
+finish sooner.  The former scenario
 is called selector mode. The latter scenario, called duplicator mode, is
 useful when the cloud and/or network performance used for deployment is
 intermittent or highly variable, or when executing at the edge incurs no
 cost or other penalty. Our results show that STOIC speeds up the total response time of the
 application by 3.3x versus our baseline scenario. In selector mode, STOIC
 achieves a placement accuracy of 92\% relative to the optimal placement.  In duplicator mode, STOIC accuracy is
-95\% for 2 GPU and 97\% (versus optimal) for 1 GPU cloud deployments over a 24 hour period.
+95\% for 2 GPUs and 97\% (versus optimal) for 1 GPU cloud deployments over a 24 hour period.
 
 \iffalse
 To do so, STOIC estimates, using execution histories, transfer time (for sending image batches to the public cloud), deployment time (to spin up runtime containers in the public cloud), and execution time (for executing the workloads on the edge and public cloud). The STOIC platform processes the images in batches, performing model training either at an edge cloud deployed locally or on a remote, shared, GPU cloud called Nautilus~\cite{ref:nautilus}.
 \fi
 
-We consider three major contributions from this work: 
+In summary, with this paper, we make the following contributions.
 \begin{itemize}
 \item We design and
-implement a serverless framework serving IoT requests by leveraging GPU
-acceleration. 
+implement a serverless framework that spans heterogenous edge and cloud systems,
+serving IoT requests, and leveraging GPU acceleration;
 \item We investigate feedback control mechanism and various
 analytical methodologies to precisely model the unstable edge and public cloud
-environments. 
-\item We test the efficacy of using this extended serverless model
-for machine learning applications that span edge-cloud systems, and
-empirically evaluate the performance of doing so. 
+environments; and 
+\item We empirically evaluate the efficacy of using this extended serverless model
+for machine learning applications and IoT deployments.
 \end{itemize}
 
 In the following sections, we present the design and implementation of STOIC.

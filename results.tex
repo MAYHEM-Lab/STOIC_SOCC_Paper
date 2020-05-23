@@ -2,7 +2,7 @@ In this section, we empirically evaluate STOIC's performance on image
 processing tasks. We implement the application as a serverless function for
 STOIC to schedule and execute.
 
-In each experiment, we use STOIC's scheduler to determine which resource to
+In each experiment, STOIC determines which resource to
 use for function execution (among a small set of feasible choices). We then
 run the function on \textit{all} resources and compare the choice made by
 STOIC to the best (shortest duration) execution across all possible choices.
@@ -16,13 +16,13 @@ images from a wildlife monitoring system.
 %acquisition and analytics system that automatically analyzes camera trap
 %images collected by cameras sited at the Sedgwick Natural
 %Reserve~\cite{ref:sedgwick} in Santa Barbara County, California. The WTB
-The 
-deployment includes an ``edge controller'' located near the cameras that are
-used to acquire the image data before it is transmitted over a slow network
-link to either a private cloud located at a research facility located
-approximately 50 miles from the site or to Amazon AWS for web
-hosting. In this work, we explore using the Nautilus distributed GPU
-cloud~\cite{ref:nautilus} along with the edge cloud to optimize image
+Our deployment includes an edge cloud located near the cameras that acquires
+the data from the cameras. The edge cloud is connected via a slow (microwave)
+link to a private cloud located at a research facility located
+approximately 50 miles from the site.
+In this work, we explore using the Nautilus distributed GPU
+cloud~\cite{ref:nautilus} as the public cloud,
+in conjuction with the edge cloud to optimize image
 classification on a convolutional neural network (CNN)~\cite{ref:cnn}
 implemented by Tensorflow and Scikit-learn~\cite{ref:scikit}. 
 
@@ -33,18 +33,16 @@ ImageDataGenerator~\cite{ref:keras}. Doing so ensures that the classification
 model is not biased. We resize every image in the image dataset to $1920 \times
 1080$, and for each class, the dataset contains 251 images used to train the
 CNN model. Once model training is complete, the application stores this model
-in hdf5 format in cloud storage at both edge cloud (disk storage) and Nautilus
-(a shared volume in a Ceph file system). 
+in hdf5 format in object storage at both edge cloud and Nautilus.
 
-To minimize transfer overhead, we move images from 
-the wildlife refuge
-%Sedgwick 
-to Nautilus in
-batches rather than one-at-a-time. To better harness the multiple GPU runtime,
-the application spawns a process (worker) for each GPU and adds all images in
+As described previously, STOIC moves images from the wildlife refuge
+to the public cloud in batches.
+To better harness the multiple GPU runtime of the public cloud,
+the application spawns a process (wor\-ker) for each GPU and adds all images in
 a batch to a shared asynchronous queue. Upon the execution, workers remove
 images (one at a time) from the shared queue until it is exhausted. This
-mechanism ensures multiple GPUs evenly divide the workloads and achieve
+mechanism ensures multiple GPU runtimes evenly divide the workloads among
+GPUs and achieve
 quasi-linear acceleration at the application level, where the perfect linear
 speed-up is unattainable because of model loading and memory transfer
 overhead~\cite{ref:multi_gpu}. 
@@ -55,13 +53,13 @@ overhead~\cite{ref:multi_gpu}.
 
 We explore four different deployment options on STOIC: 
 \begin{itemize}
-\item a node of the edge cloud, 
-\item on the controlling cpu (an x86 processor) that Nautilus uses to move
-data in and out of one or more GPUs,
-\item on one GPU in Nautilus,
-\item on two GPUs in Nautilus.
-\end{itemize} %put in the names here? cjk
-On the edge cloud, the application can begin immediately when a camera delivers an image batch.  To use Nautilus, however, the image batch must first traverse the network from the edge cloud to Nautilus (thereby incurring an additional transfer time) and then Nautilus must schedule a ``pod'' (containing either one or two GPU in this study) before the Nautilus CPU or any GPU can begin running.  We define the time that Nautilus requires for pod scheduling as ``deployment time.''~\footnote{Note that Nautilus currently allows non-priviledged users to request up to 8 GPUs, but the deployment times for requests of greater than 2 are usually large as to make them superfluous. That is, a GPU request for more than two GPUs is rarely, if ever successfully, satisfied in the shortest possible time.} Finally, the run time is the time required by a resource (edge cloud cpu, Naultius cpu, on Nautilus GPU, two Nautilus GPUs) to complete the CNN training.  
+\item a node of the edge cloud (Edge), 
+\item on the controlling CPU (an x86 processor) that Nautilus uses to move
+data in and out of one or more GPUs (CPU),
+\item on one GPU in Nautilus (GPU1),
+\item on two GPUs in Nautilus (GPU2).
+\end{itemize}
+On the edge cloud, the application begins immediately when a camera delivers an image batch.  To use Nautilus, however, the image batch must first traverse the network from the edge cloud to Nautilus (thereby incurring an additional transfer time) and then Nautilus must schedule a ``pod'' (containing either one or two GPU in this study) before the Nautilus CPU or any GPU can begin running.  We define the time that Nautilus requires for pod scheduling as ``deployment time.''~\footnote{Note that Nautilus currently allows non-priviledged users to request up to 8 GPUs, but the deployment times for requests of greater than 2 are usually large as to make them superfluous. That is, a GPU request for more than two GPUs is rarely, if ever successfully, satisfied in the shortest possible time.} Finally, the run time is the time required by a resource (Edge, CPU, GPU1, and GPU2) to complete the CNN training.  
 
 We do not explore the possibility of overlapping transfer time, deployment time, and run time and we do not model the time required to return the trained model to the edge cloud. Thus the total response time is the sum of the transfer time, the deployment time, and the run time for an image batch. On the edge, the transfer times and deployment times are zero.
 \fi
@@ -69,24 +67,27 @@ We do not explore the possibility of overlapping transfer time, deployment time,
 
 
 \begin{figure*}[t] \centering 
-\includegraphics[scale=0.2]{figures/gpu1_latency.png}
+\includegraphics[scale=0.24]{figures/gpu1_latency.png}
 \caption{The distribution of three components in total response time~($T_s$) of 150 executions on GPU1 runtime: Processing time ($T_p$), Deployment time ($T_d$) and Transfer time ($T_t$). The x-axis represents the time range, while the y-axis is the frequency of executions. The deployment time, which is depicted in the red histogram, is volatile and error-prone to prediction.
 \label{fig:breakdown}}
 \end{figure*}
 
-In the experiment, we model the batch size using simulator that leverages
-historical data derived from the overall image corpus from 2013 to 2017 and the
-arrival rate of images at the cameras. Figure~\ref{fig:breakdown} shows an
-example histograms for processing time, transfer time and deployment time on
-Nautilus for GPU1 runtime using 150 batches drawn from the simulator. On the
-x-axis, we show the elapsed time for processing time, transfer time, and
+To drive this experiment, we use the workload generator
+described in Section~\ref{sec:workloadgen} to facilitate faster-than-real
+time evaluation of STOIC. The generator uses a image series and their
+interarrival patterns from
+a camera trap image corpus from 2013--2017.
+Figure~\ref{fig:breakdown} shows 
+example histograms for processing time, transfer time, and deployment time on
+Nautilus for GPU1 runtime using 150 batches drawn from the workload generator.
+On the x-axis, we show the elapsed time for processing time, transfer time, and
 deployment time respectively.  Note that processing time and transfer time are
 relatively stable compared to deployment time. 
 
 \subsection{Selector Evaluation}
 
-We evaluate the STOIC Selector over a 24-hour time period consisting of 162
-image batches, the sizes of which are drawn randomly from the simulator. Each
+We first evaluate STOIC selector mode for a 24-hour time period consisting of 162
+image batches, the sizes of which are drawn randomly from the workload generator. Each
 batch is executed on the edge cloud, on the Nautilus CPU, on one Nautilus GPU
 and on two Nautilus GPUs. Over the test period, the STOIC Selector chooses the
 fastest (lowest total response time) from among these four options $149$ times
@@ -98,22 +99,22 @@ correct) would have resulted in an aggregate total latency of $10022$ seconds
 and the worst case aggregate latency as $35940$ seconds compared to a STOIC
 aggregate latency of $10770$ seconds.  Thus STOIC achieves an aggregate
 latency that is $5.3\%$ slower than optimal, but $70\%$ ($3.33$) times faster
-than the worst case. Table~\ref{tab:selector} summarizes these results. In the
-table, we report the success rate, the percentage of optimal, and the
-percentage of worst case aggregate response times achieved by STOIC. 
+than the worst case. %Table~\ref{tab:selector} summarizes these results. In the
+%table, we report the success rate, the percentage of optimal, and the
+%percentage of worst case aggregate response times achieved by STOIC. 
 
-\begin{table}[t] 
-\begin{centering}
-\captionsetup{justification=centering}
-\input{tables/selector}
-\end{centering}
-\caption{
-STOIC Selector results. The success rate is the percentage of correct decisions
-(out of 162 trials) made by STOIC.  ``Optimal'' shows the percentage of the
-optimal selection aggregate response time and ``Worst Case'' shows the percentage of the worst case 
-selection aggregate response time made by STOIC.}
-\label{tab:selector}
-\end{table}
+%\begin{table}[t] 
+%\begin{centering}
+%\captionsetup{justification=centering}
+%\input{tables/selector}
+%\end{centering}
+%\caption{
+%STOIC Selector results. The success rate is the percentage of correct decisions
+%(out of 162 trials) made by STOIC.  ``Optimal'' shows the percentage of the
+%optimal selection aggregate response time and ``Worst Case'' shows the percentage of the worst case 
+%selection aggregate response time made by STOIC.}
+%\label{tab:selector}
+%\end{table}
 
 We further analyze the data points where STOIC made erroneous selections and
 found two sources of error. First, the most error occurs around two batch
@@ -142,7 +143,7 @@ not the fastest.
 
 Put another way, there is no cost to running the edge cloud speculatively
 while data is transferring to Nautilus and the application waits for Nautilus
-to deploy pods for the cpu and GPUx runtimes. If STOIC (using Selector)
+to deploy pods for the CPU and GPUx runtimes. If STOIC (using Selector)
 predicts that Nautilus will be faster, and STOIC is correct, the work on the
 edge cloud is ``duplicate work'' which is unnecessary. However because of the
 deployment variability, it may be that the edge cloud speculative execution
@@ -166,7 +167,7 @@ Nautilus resources parsimoniously.
 \end{itemize}
 We call the STOIC scheduler that attempts to minimize response times under these assumptions -- the Duplicator.
 
-Further, we noticed that the Naultilus cpu was seldom a good choice in
+Further, we noticed that the Naultilus CPU is seldom a good choice in
 practice. The application must ``pay'' for the transfer and incur the
 deployment time variability to acquire a CPU that is almost equivalent to the
 edge node CPU.  Thus, in the ``real world'' version of the STOIC scheduler for
@@ -276,7 +277,7 @@ realized by the Duplicator heuristic.
 \centering
 \input{tables/duplicator-excess}
 \caption{
-Nautilus savings (positive values) and loss (negative values) for STOIC Duplicator. Savings are the time returned to Nautilus due to edge execution. Loss is the time used on Nautilus unnecessarily due to a faster edge execution. All units are seconds. In the 2 GPU case, the time is for both GPUs.}
+Nautilus savings (positive values) and loss (negative values) for STOIC Duplicator. Savings are the time returned to Nautilus due to edge execution. Loss is the ``wasted'' time on Nautilus when the GPU runtimes are terminated because of faster edge execution. All units are in seconds. In the GPU2 case, the time is for both GPUs.}
 \label{tab:savings}
 \end{table}
 

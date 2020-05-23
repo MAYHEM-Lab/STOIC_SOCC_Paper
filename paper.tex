@@ -1,5 +1,5 @@
 % \documentclass[10pt,twocolumn]{article}
-\documentclass[sigplan, anonymous, authorversion]{acmart}
+\documentclass[11pt,sigplan, anonymous, authorversion]{acmart}
 \usepackage{times}
 \usepackage{graphicx}
 \usepackage{anyfontsize}
@@ -32,8 +32,37 @@
 \acmPrice{15.00}
 \acmISBN{978-1-4503-XXXX-X/18/06}
 
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10010405.10010406.10010422</concept_id>
+<concept_desc>Applied computing~Event-driven architectures</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010147.10010919</concept_id>
+<concept_desc>Computing methodologies~Distributed computing methodologies</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10010520.10010521.10010537</concept_id>
+<concept_desc>Computer systems organization~Distributed architectures</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Applied computing~Event-driven architectures}
+\ccsdesc[300]{Computing methodologies~Distributed computing methodologies}
+\ccsdesc[300]{Computer systems organization~Distributed architectures}
+
+% Keywords. The author(s) should pick words that accurately describe the work being
+% presented. Separate the keywords with commas.
+\keywords{serverless, IoT, scheduling, cloud functions, GPU}
 
 \hyphenation{multi-university}
+
+\newcommand{\ignore}[1]{}
 
 
 \begin{document}
@@ -95,10 +124,12 @@
 \label{sec:conc}
 \input{conclusion}
 
-\section*{Acknowledgments}
-This work has been supported in part by NSF (CNS-1703ß560, CCF-1539586,
-ACI-1541215), ONR NEEC (N00174-16-C-0020),
-and the AWS Cloud Credits for Research program.
+% cannot include this until paper is unblinded
+%\section*{Acknowledgments}
+%This work has been supported in part by NSF (CNS-1703560, CCF-1539586,
+%ACI-1541215), ONR NEEC (N00174-16-C-0020),
+%and the AWS Cloud Credits for Research program.
+%This work was performed in part at the University of California Natural Reserve System Sedgwick Reserve DOI: 10.21973/N3C08R.
 
 
 
