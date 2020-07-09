@@ -1,0 +1,137 @@
+SOCC 2020 Paper #144 Reviews and Comments
+===========================================================================
+Paper #144 Edge-Adaptable Serverless Acceleration for Machine Learning IoT
+Applications
+
+
+Review #144A
+===========================================================================
+
+Overall merit
+-------------
+1. Reject
+
+Paper summary
+-------------
+This paper presents a dynamic mechanism to reduce latency when executing serverless functions. The total cost includes transfer time, deployment time, and processing time. The deployment time is the time to deploy requested kubeless function, which differs on CPU and GPU. They use a window of past data to estimate the deployment time. For the processing time, it proposes a regression model, whose input is the batch size, and predicts the estimated running time on certain hardware.
+Besides, it proposes two modes: selector mode and duplicator mode. The selector mode is to choose the hardware with the best estimated time.  The duplicator mode runs the ML model on the edge and the gpu concurrently and terminates the execution on edge if the remaining time on the edge is longer than the expected processing time on the GPU.  The experiments show that their method could choose the best hardware to execute with a high success rate.
+
+Novelty
+-------
+2. Incremental improvement
+
+Writing quality
+---------------
+3. Adequate
+
+Reviewer expertise
+------------------
+2. Some familiarity
+
+Comments for author
+-------------------
+1) Section 1
+- 'We specifically target online learning [12] and inference using Tensorflow for image-based, object recognition across hybrid deployments in this work.' But your work only shows how to do inference, doesn't mention anything about online learning.
+- 'The latter scenario, called Duplicator mode, is useful when the cloud and/or network performance used for deployment is intermittent or highly variable' Why duplicator mode is better when the network is intermittent?
+
+2) Section 2.4.2
+- What is the input of the auto-regression model?
+- It is not clear how many data points are selected to obtain a model, and how many are used to compute MAE.
+
+3) Algorithm 1
+- There is no need to explain a well-known RANSAC algorithm.
+- In line 10, curr_error is not defined.
+
+4) Table 2
+- Please explain more what is 'First Half' and 'Second Half' in the table.
+
+5) Section 2.4.3
+- Why should the deployment time be taken into account every time the function is executed? They are different functions? Why can't we deploy once and execute without the extra deployment cost?
+
+6) Section 2.5
+- Does that mean you sample data with the same rate in each hour for faster evaluation?
+
+7) Section 2.7
+- Will the selector mode performs better when running in a dedicated server? Since your experiments are conducted in a shared cloud, the inaccurate prediction of deployment time is reasonable.
+
+8) Section 3.1
+- Please explain whether you run all images in a single batch, or run multiple times, each with fixed batch size. If the batch size is large enough, the deployment time and model loading time could be alleviated and achieve nearly linear speed-up when using multiple GPUs.
+
+9) Section 3.3
+- 'Thus STOIC achieves an aggregate latency that is 7.4% slower than optimal, but 70% (3.33) times faster than the worst case.', What is the meaning of '3.33'?
+- 'To be specific, the edge and GPU runtimes cross over at 35 image batch size and 90 image batch size for the GPU1 and GPU2 runtimes.' Please add a figure to show how they cross over.
+- How many executions are optimal when running on edge? What about CPU, gpu1 and gpu2?
+- Please add the expected time saving for each execution.
+
+10) Section 4
+- This is not the first paper studying placement. Please add the other placement papers in the related work, and compare yours with them in the experiments if they are applicable in your system.
+
+
+
+Review #144B
+===========================================================================
+
+Overall merit
+-------------
+2. Weak reject
+
+Paper summary
+-------------
+This paper presents STOIC, a scheduler for cloud-edge serverless deployments. STOIC places serverless functions at the edge or in the cloud depending on which option it predicts would result in least user-perceived application latency. The authors use online inference to show the effectiveness of their system. Using real deployments, they show that STOIC reduces execution time and achieves good placement accuracy.
+
+Novelty
+-------
+2. Incremental improvement
+
+Writing quality
+---------------
+2. Needs improvement
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Comments for author
+-------------------
+Thank you for your submission to SoCC '20!
+
+Hybrid serverless computing is an emerging area gaining significant traction, especially in the industry and STOIC solves a very timely and important problem. I liked the fact that the authors considered the heterogeneity of cloud resources in terms of different CPUs and GPUs and that they evaluated their system on a platform that proxies real-world cloud-edge scenarios. 
+
+The paper could improve in two aspects: first, it can significantly improve the presentation of the core contributions. Second, it should compare with two areas that are extremely relevant: geo-distributed analytics and mobile-cloud offloading. 
+
+In terms of presentation, I felt that the paper glanced over several details that are crucial. For instance, the authors correctly identify that the heterogeneity in the cloud makes it very hard to correctly estimate execution time. However, the paper doesn't go into details of how STOIC addresses this. The paper simply mentions that they use linear regression on historic execution data. There is no explanation of why this is the right choice, nor are there details on how exactly the model works. Similarly, transfer time is computed by using instantaneous bandwidth. Bandwidth estimation is a difficult problem in itself, and it would have been interesting to learn how STOIC exactly determines the bandwidth. The paper doesn't provide details on this. Finally, the workload itself is not explained clearly. In the introduction, the authors mention that they are targeting online learning and inference at the edge. I would assume you are simply trying classification using a pre-trained model (and so the training time is irrelevant) and there is no online learning involved. It would be good to provide details on the model. It seems like the only advantage of the cloud is the availability of a GPU; if not for the GPU one could simply run everything at the edge. I wish the paper would have explored simple strawman alternatives. For example, Tensorflow has tensorflow-lite which is optimized to run on resource constrained devices such as a phone. How would using a Raspberry Pi running tensorflow-lite as the edge device perform? Another question that the paper doesn't answer is how often the GPU is useful. One strawman alternative would be to try a cheap GPU at the edge. Overall, the example problem of image classification the paper presents doesn't convince me that it warrants a hybrid cloud-edge system. It may very well be the case, but the paper should do a good job of substantiating its design decisions in detail and evaluation needs significant improvements.
+
+In terms of comparison, the paper doesn't mention two highly relevant areas. First is geo-distributed analytics (e.g., Low Latency Geo-distributed Data Analytics, SIGCOMM 2015 and many others). While not directly similar, these systems incorporate scheduling decisions that make data and/or task placements to minimize query execution. A more closer area is mobile-cloud offloading (e.g., MAUI: making smartphones last longer with code offload, MobiSys 2010 and many others). These systems make the case for offloading computation from mobile devices to the cloud for minimizing battery use and execution time. The paper would become much stronger if you could contrast your approach with these and clearly spell out the differences.
+
+
+
+Review #144C
+===========================================================================
+
+Overall merit
+-------------
+2. Weak reject
+
+Paper summary
+-------------
+This paper presents STOIC, a framework that decides whether to schedule an image processing computation to be done on the edge or the cloud (different resources), by using a runtime and network time estimation model. It uses a wildlife edge setting for its evaluation.
+
+Novelty
+-------
+2. Incremental improvement
+
+Writing quality
+---------------
+3. Adequate
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Comments for author
+-------------------
+This paper considers the problem of scheduling an image processing application on the edge vs. the cloud (considering different cloud resource options). It uses a historical model to estimate the runtime of executing at the different options, and selects the best one (or duplicates with the edge).
+
+The problem of  edge/cloud selection is important for a multi-tiered computing environment. The paper has a real deployment and an interesting wildlife usecase, which are nice.
+
+However, the proposed approach appears straightforward and seems to rely on simple models and heuristics. It's unclear what the research challenges are. The evaluation could be strengthened by considering more cloud options as well as other comparison baselines.
